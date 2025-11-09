@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airia-model-hosting-qwen2-vl-72b-llamacpp
+  namespace: airia
+  labels:
+    app.kubernetes.io/name: airia-model-hosting-qwen2-vl-72b-llamacpp
+    app.kubernetes.io/part-of: airia
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: airia-model-hosting-qwen2-vl-72b-llamacpp
+  template:
+    metadata:
+      labels:
+        app: airia-model-hosting-qwen2-vl-72b-llamacpp
+        app.kubernetes.io/name: airia-model-hosting-qwen2-vl-72b-llamacpp
+        app.kubernetes.io/part-of: airia
+        sidecar.istio.io/inject: "false"
+    spec:
+      nodeSelector:
+        agentpool: a10fullnodes
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+      imagePullSecrets:
+      - name: artifactory-docker-cfg
+      containers:
+      - name: qwen2-vl-llamacpp
+        image: airiareleaseregistry.azurecr.io/baremetal/docker/airia-model-hosting-qwen2-vl-72b-llamacpp:0.1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8008
+          protocol: TCP
+        env:
+        # llama.cpp specific configurations
+        - name: LLAMA_CONTEXT_SIZE
+          value: "8192"
+        - name: LLAMA_BATCH_SIZE
+          value: "2048"
+        - name: LLAMA_THREADS
+          value: "24"
+        - name: LLAMA_GPU_LAYERS
+          value: "99"  # Offload all layers to GPU
+        - name: LLAMA_PARALLEL
+          value: "8"   # Parallel requests
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0"
+        # CUDA optimizations
+        - name: CUDA_LAUNCH_BLOCKING
+          value: "0"
+        resources:
+          requests:
+            cpu: "8000m"
+            memory: "32Gi"
+            nvidia.com/gpu: "1"
+          limits:
+            cpu: "32000m"
+            memory: "128Gi"
+            nvidia.com/gpu: "1"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          runAsUser: 1654
+          seccompProfile:
+            type: RuntimeDefault
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: airia-model-hosting-qwen2-vl-llamacpp-svc
+  namespace: airia
+spec:
+  selector:
+    app: airia-model-hosting-qwen2-vl-72b-llamacpp
+  ports:
+  - protocol: TCP
+    port: 8008
+    targetPort: 8008
+  type: ClusterIP
