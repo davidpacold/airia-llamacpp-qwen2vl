@@ -18,17 +18,55 @@ High-performance vision model deployment using llama.cpp with Qwen2-VL 72B for A
 - **Quality**: Superior OCR and document understanding
 - **Concurrent Requests**: Up to 8 parallel
 
-## Build
+## Quick Start
+
+### 1. Build via GitHub Actions
+
+Simply push to `main` branch and GitHub Actions will automatically build and push to GitHub Container Registry (ghcr.io).
 
 ```bash
-docker build -t airiareleaseregistry.azurecr.io/baremetal/docker/airia-model-hosting-qwen2-vl-72b-llamacpp:0.1.0 .
-docker push airiareleaseregistry.azurecr.io/baremetal/docker/airia-model-hosting-qwen2-vl-72b-llamacpp:0.1.0
+git push origin main
 ```
 
-## Deploy
+The image will be available at:
+```
+ghcr.io/YOUR_USERNAME/airia-llamacpp-qwen2vl:latest
+```
+
+### 2. Pull the Image
+
+```bash
+# Public repo (no auth needed)
+docker pull ghcr.io/YOUR_USERNAME/airia-llamacpp-qwen2vl:latest
+
+# Private repo (create GitHub token with read:packages scope)
+echo $GITHUB_TOKEN | docker login ghcr.io -u YOUR_USERNAME --password-stdin
+docker pull ghcr.io/YOUR_USERNAME/airia-llamacpp-qwen2vl:latest
+```
+
+### 3. Deploy to Kubernetes
+
+Update `deployment.yaml` with your GitHub username, then:
 
 ```bash
 kubectl apply -f deployment.yaml
+```
+
+For private repos, create an image pull secret:
+
+```bash
+kubectl create secret docker-registry ghcr-secret \
+  --docker-server=ghcr.io \
+  --docker-username=YOUR_USERNAME \
+  --docker-password=YOUR_GITHUB_TOKEN \
+  -n airia
+```
+
+## Manual Build (Optional)
+
+```bash
+docker build -t ghcr.io/YOUR_USERNAME/airia-llamacpp-qwen2vl:latest .
+docker push ghcr.io/YOUR_USERNAME/airia-llamacpp-qwen2vl:latest
 ```
 
 ## Configuration
