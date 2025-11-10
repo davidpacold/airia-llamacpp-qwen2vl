@@ -28,13 +28,14 @@ WORKDIR /build/llama.cpp
 # Create symlink for libcuda.so stub (linker needs this)
 RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1
 
-# Build with CMake and CUDA support
+# Build with CMake and CUDA support (static libraries to avoid runtime dependencies)
 # Set library path to include stubs during linking
 RUN LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:${LD_LIBRARY_PATH} \
     cmake -B build \
     -DGGML_CUDA=ON \
     -DGGML_CURL=ON \
     -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_CUDA_FLAGS="-allow-unsupported-compiler" \
     && LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:${LD_LIBRARY_PATH} \
     cmake --build build --config Release --target llama-server -j$(nproc)
@@ -55,13 +56,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the built binary and all shared libraries from builder
+# Copy the statically-linked binary from builder
 COPY --from=builder /build/llama.cpp/build/bin/llama-server /usr/local/bin/llama-server
-COPY --from=builder /build/llama.cpp/build/ggml /usr/local/lib/ggml
 
-# Copy all CUDA shared libraries from builder stage to runtime
+# Copy only CUDA runtime libraries (required even with static linking)
+# Note: libcuda.so comes from NVIDIA driver at runtime, not copied here
 RUN mkdir -p /usr/local/cuda/lib64
-COPY --from=builder /usr/local/cuda-12.2/lib64/ /usr/local/cuda/lib64/
+COPY --from=builder /usr/local/cuda-12.2/lib64/libcudart.so* /usr/local/cuda/lib64/
+COPY --from=builder /usr/local/cuda-12.2/lib64/libcublas.so* /usr/local/cuda/lib64/
+COPY --from=builder /usr/local/cuda-12.2/lib64/libcublasLt.so* /usr/local/cuda/lib64/
 
 # Update library cache and add to LD_LIBRARY_PATH
 RUN ldconfig /usr/local/cuda/lib64
