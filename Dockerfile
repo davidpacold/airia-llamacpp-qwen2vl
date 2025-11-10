@@ -25,6 +25,9 @@ RUN git clone --depth 1 https://github.com/ggerganov/llama.cpp.git
 
 WORKDIR /build/llama.cpp
 
+# Set up CUDA stub library path for linking
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:${LD_LIBRARY_PATH}
+
 # Build with CMake and CUDA support
 RUN cmake -B build \
     -DGGML_CUDA=ON \
