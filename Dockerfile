@@ -67,37 +67,20 @@ WORKDIR /app
 RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
-MODEL_FILE="/app/models/qwen2-vl-72b-instruct-q4_k_m.gguf"\n\
-MMPROJ_FILE="/app/models/mmproj-qwen2-vl-72b-instruct-f16.gguf"\n\
-\n\
-# Set up Hugging Face authentication if token is provided\n\
-if [ -n "$HF_TOKEN" ]; then\n\
-  echo "Using Hugging Face authentication token"\n\
-fi\n\
+MODEL_FILE="/app/models/Qwen2-VL-72B-Instruct-Q4_K_M.gguf"\n\
+MMPROJ_FILE="/app/models/mmproj-Qwen2-VL-72B-Instruct-f32.gguf"\n\
 \n\
 # Download model if not exists (with progress and resume support)\n\
 if [ ! -f "$MODEL_FILE" ]; then\n\
-  echo "Downloading Qwen2-VL 72B model (~20GB)..."\n\
-  if [ -n "$HF_TOKEN" ]; then\n\
-    wget -c --progress=dot:giga --header="Authorization: Bearer $HF_TOKEN" \\\n\
-      -O "$MODEL_FILE" \\\n\
-      https://huggingface.co/Qwen/Qwen2-VL-72B-Instruct-GGUF/resolve/main/qwen2-vl-72b-instruct-q4_k_m.gguf\n\
-  else\n\
-    wget -c --progress=dot:giga -O "$MODEL_FILE" \\\n\
-      https://huggingface.co/Qwen/Qwen2-VL-72B-Instruct-GGUF/resolve/main/qwen2-vl-72b-instruct-q4_k_m.gguf\n\
-  fi\n\
+  echo "Downloading Qwen2-VL 72B model (~47GB)..."\n\
+  wget -c --progress=dot:giga -O "$MODEL_FILE" \\\n\
+    https://huggingface.co/bartowski/Qwen2-VL-72B-Instruct-GGUF/resolve/main/Qwen2-VL-72B-Instruct-Q4_K_M.gguf\n\
 fi\n\
 \n\
 if [ ! -f "$MMPROJ_FILE" ]; then\n\
-  echo "Downloading MMProj model (~2GB)..."\n\
-  if [ -n "$HF_TOKEN" ]; then\n\
-    wget -c --progress=dot:giga --header="Authorization: Bearer $HF_TOKEN" \\\n\
-      -O "$MMPROJ_FILE" \\\n\
-      https://huggingface.co/Qwen/Qwen2-VL-72B-Instruct-GGUF/resolve/main/mmproj-qwen2-vl-72b-instruct-f16.gguf\n\
-  else\n\
-    wget -c --progress=dot:giga -O "$MMPROJ_FILE" \\\n\
-      https://huggingface.co/Qwen/Qwen2-VL-72B-Instruct-GGUF/resolve/main/mmproj-qwen2-vl-72b-instruct-f16.gguf\n\
-  fi\n\
+  echo "Downloading MMProj model (~2.5GB)..."\n\
+  wget -c --progress=dot:giga -O "$MMPROJ_FILE" \\\n\
+    https://huggingface.co/bartowski/Qwen2-VL-72B-Instruct-GGUF/resolve/main/mmproj-Qwen2-VL-72B-Instruct-f32.gguf\n\
 fi\n\
 \n\
 echo "Starting llama.cpp server with Qwen2-VL 72B..."\n\
