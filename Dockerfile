@@ -59,10 +59,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /build/llama.cpp/build/bin/llama-server /usr/local/bin/llama-server
 COPY --from=builder /build/llama.cpp/build/ggml /usr/local/lib/ggml
 
-# Create CUDA lib directory and copy all libraries
+# Copy all CUDA shared libraries from builder stage to runtime
 RUN mkdir -p /usr/local/cuda/lib64
-COPY --from=builder /usr/local/cuda-12.2/lib64/*.so* /usr/local/cuda/lib64/
-COPY --from=builder /usr/local/cuda-12.2/targets/x86_64-linux/lib/*.so* /usr/local/cuda/lib64/ || true
+COPY --from=builder /usr/local/cuda-12.2/lib64/ /usr/local/cuda/lib64/
 
 # Update library cache and add to LD_LIBRARY_PATH
 RUN ldconfig /usr/local/cuda/lib64
