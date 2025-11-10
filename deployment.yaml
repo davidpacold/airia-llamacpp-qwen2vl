@@ -78,7 +78,7 @@ spec:
         - name: LLAMA_THREADS
           value: "24"
         - name: LLAMA_GPU_LAYERS
-          value: "99"  # Offload all layers to GPU
+          value: "99"  # Offload all layers to GPU (7B fits fully)
         - name: LLAMA_PARALLEL
           value: "8"   # Parallel requests
         - name: CUDA_VISIBLE_DEVICES
