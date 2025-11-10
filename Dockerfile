@@ -1,69 +1,71 @@
-FROM nvidia/cuda:12.2.2-devel-ubuntu22.04
+# Multi-stage build for smaller image size
+# Stage 1: Build llama.cpp
+FROM nvidia/cuda:12.2.2-devel-ubuntu22.04 AS builder
 
-# Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
-ENV CUDA_DOCKER_ARCH=all
 ENV LLAMA_CUDA=1
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
+# Install only build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
-    cmake \
     build-essential \
-    curl \
-    wget \
     libcurl4-openssl-dev \
-    python3 \
-    python3-pip \
     pkg-config \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone and build llama.cpp with CUDA support
-WORKDIR /app
-RUN git clone https://github.com/ggerganov/llama.cpp.git
+# Clone and build llama.cpp
+WORKDIR /build
+RUN git clone --depth 1 https://github.com/ggerganov/llama.cpp.git && \
+    cd llama.cpp && \
+    make LLAMA_CUDA=1 LLAMA_CURL=1 -j$(nproc) && \
+    strip llama-server
 
-WORKDIR /app/llama.cpp
+# Stage 2: Runtime image
+FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04
 
-# Build llama.cpp with CUDA support (using make instead of cmake for better compatibility)
-RUN make LLAMA_CUDA=1 LLAMA_CURL=1 -j$(nproc)
+ENV DEBIAN_FRONTEND=noninteractive
 
-WORKDIR /app/llama.cpp
+# Install only runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    curl \
+    ca-certificates \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy only the built binary from builder
+COPY --from=builder /build/llama.cpp/llama-server /usr/local/bin/llama-server
 
 # Create models directory
 RUN mkdir -p /app/models
 
-# Download Qwen2-VL 72B GGUF model
-# Using Q4_K_M quantization for optimal quality/performance on 24GB VRAM
-RUN wget -O /app/models/qwen2-vl-72b-instruct-q4_k_m.gguf \
-    https://huggingface.co/Qwen/Qwen2-VL-72B-Instruct-GGUF/resolve/main/qwen2-vl-72b-instruct-q4_k_m.gguf || \
-    echo "Model will be downloaded on first run"
+WORKDIR /app
 
-# Download mmproj file for vision capabilities
-RUN wget -O /app/models/qwen2-vl-mmproj-model.gguf \
-    https://huggingface.co/Qwen/Qwen2-VL-72B-Instruct-GGUF/resolve/main/mmproj-model-f16.gguf || \
-    echo "MMProj will be downloaded on first run"
-
-# Create entrypoint script
+# Create optimized entrypoint script
 RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
-# Download model if not exists\n\
-if [ ! -f /app/models/qwen2-vl-72b-instruct-q4_k_m.gguf ]; then\n\
-  echo "Downloading Qwen2-VL 72B model..."\n\
-  wget -O /app/models/qwen2-vl-72b-instruct-q4_k_m.gguf \\\n\
+MODEL_FILE="/app/models/qwen2-vl-72b-instruct-q4_k_m.gguf"\n\
+MMPROJ_FILE="/app/models/qwen2-vl-mmproj-model.gguf"\n\
+\n\
+# Download model if not exists (with progress and resume support)\n\
+if [ ! -f "$MODEL_FILE" ]; then\n\
+  echo "Downloading Qwen2-VL 72B model (~20GB)..."\n\
+  wget -c --progress=dot:giga -O "$MODEL_FILE" \\\n\
     https://huggingface.co/Qwen/Qwen2-VL-72B-Instruct-GGUF/resolve/main/qwen2-vl-72b-instruct-q4_k_m.gguf\n\
 fi\n\
 \n\
-if [ ! -f /app/models/qwen2-vl-mmproj-model.gguf ]; then\n\
+if [ ! -f "$MMPROJ_FILE" ]; then\n\
   echo "Downloading MMProj model..."\n\
-  wget -O /app/models/qwen2-vl-mmproj-model.gguf \\\n\
+  wget -c --progress=dot:giga -O "$MMPROJ_FILE" \\\n\
     https://huggingface.co/Qwen/Qwen2-VL-72B-Instruct-GGUF/resolve/main/mmproj-model-f16.gguf\n\
 fi\n\
 \n\
 echo "Starting llama.cpp server with Qwen2-VL 72B..."\n\
-exec /app/llama.cpp/llama-server \\\n\
-  -m /app/models/qwen2-vl-72b-instruct-q4_k_m.gguf \\\n\
-  --mmproj /app/models/qwen2-vl-mmproj-model.gguf \\\n\
+exec llama-server \\\n\
+  -m "$MODEL_FILE" \\\n\
+  --mmproj "$MMPROJ_FILE" \\\n\
   -ngl 99 \\\n\
   --host 0.0.0.0 \\\n\
   --port 8008 \\\n\
@@ -82,12 +84,12 @@ exec /app/llama.cpp/llama-server \\\n\
 ' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Set default environment variables
-ENV LLAMA_CONTEXT_SIZE=8192
-ENV LLAMA_BATCH_SIZE=2048
-ENV LLAMA_THREADS=24
-ENV LLAMA_GPU_LAYERS=99
-ENV LLAMA_PARALLEL=8
-ENV CUDA_VISIBLE_DEVICES=0
+ENV LLAMA_CONTEXT_SIZE=8192 \
+    LLAMA_BATCH_SIZE=2048 \
+    LLAMA_THREADS=24 \
+    LLAMA_GPU_LAYERS=99 \
+    LLAMA_PARALLEL=8 \
+    CUDA_VISIBLE_DEVICES=0
 
 EXPOSE 8008
 
