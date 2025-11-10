@@ -62,6 +62,23 @@ kubectl create secret docker-registry ghcr-secret \
   -n airia
 ```
 
+### 4. Hugging Face Token (Optional)
+
+If you need to download gated models from Hugging Face, create a secret with your HF token:
+
+```bash
+kubectl create secret generic hf-token \
+  --from-literal=token=YOUR_HUGGINGFACE_TOKEN \
+  -n airia
+```
+
+To get your token:
+1. Go to https://huggingface.co/settings/tokens
+2. Create a token with "Read access to contents of all public gated repos you can access"
+3. Use this token in the command above
+
+**Note:** The Qwen2-VL 72B model used by default does not require authentication.
+
 ## Manual Build (Optional)
 
 ```bash
