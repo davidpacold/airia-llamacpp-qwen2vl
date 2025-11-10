@@ -25,15 +25,19 @@ RUN git clone --depth 1 https://github.com/ggerganov/llama.cpp.git
 
 WORKDIR /build/llama.cpp
 
-# Set up CUDA stub library path for linking
-ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:${LD_LIBRARY_PATH}
+# Create symlink for libcuda.so stub (linker needs this)
+RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1
 
 # Build with CMake and CUDA support
-RUN cmake -B build \
+# Set library path to include stubs during linking
+RUN LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:${LD_LIBRARY_PATH} \
+    cmake -B build \
     -DGGML_CUDA=ON \
     -DGGML_CURL=ON \
     -DCMAKE_BUILD_TYPE=Release \
-    && cmake --build build --config Release --target llama-server -j$(nproc)
+    -DCMAKE_CUDA_FLAGS="-allow-unsupported-compiler" \
+    && LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:${LD_LIBRARY_PATH} \
+    cmake --build build --config Release --target llama-server -j$(nproc)
 
 # Strip binary to reduce size
 RUN strip build/bin/llama-server || true
