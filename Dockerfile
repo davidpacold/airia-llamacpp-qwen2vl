@@ -3,7 +3,7 @@ FROM nvidia/cuda:12.2.2-devel-ubuntu22.04
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV CUDA_DOCKER_ARCH=all
-ENV LLAMA_CUBLAS=1
+ENV LLAMA_CUDA=1
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -15,15 +15,17 @@ RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
     python3 \
     python3-pip \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone and build llama.cpp with CUDA support
 WORKDIR /app
-RUN git clone https://github.com/ggerganov/llama.cpp.git && \
-    cd llama.cpp && \
-    git checkout master && \
-    cmake -B build -DLLAMA_CUBLAS=ON -DLLAMA_CURL=ON && \
-    cmake --build build --config Release -j$(nproc)
+RUN git clone https://github.com/ggerganov/llama.cpp.git
+
+WORKDIR /app/llama.cpp
+
+# Build llama.cpp with CUDA support (using make instead of cmake for better compatibility)
+RUN make LLAMA_CUDA=1 LLAMA_CURL=1 -j$(nproc)
 
 WORKDIR /app/llama.cpp
 
@@ -59,7 +61,7 @@ if [ ! -f /app/models/qwen2-vl-mmproj-model.gguf ]; then\n\
 fi\n\
 \n\
 echo "Starting llama.cpp server with Qwen2-VL 72B..."\n\
-exec /app/llama.cpp/build/bin/server \\\n\
+exec /app/llama.cpp/llama-server \\\n\
   -m /app/models/qwen2-vl-72b-instruct-q4_k_m.gguf \\\n\
   --mmproj /app/models/qwen2-vl-mmproj-model.gguf \\\n\
   -ngl 99 \\\n\
