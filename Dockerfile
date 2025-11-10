@@ -116,7 +116,7 @@ exec llama-server \\\n\
 ' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Set default environment variables
-ENV LLAMA_CONTEXT_SIZE=16384 \
+ENV LLAMA_CONTEXT_SIZE=32768 \
     LLAMA_BATCH_SIZE=2048 \
     LLAMA_THREADS=24 \
     LLAMA_GPU_LAYERS=99 \
