@@ -59,11 +59,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /build/llama.cpp/build/bin/llama-server /usr/local/bin/llama-server
 COPY --from=builder /build/llama.cpp/build/ggml /usr/local/lib/ggml
 
-# Copy all CUDA libraries to standard library path
-COPY --from=builder /usr/local/cuda/lib64/ /usr/local/lib/
+# Create CUDA lib directory and copy all libraries
+RUN mkdir -p /usr/local/cuda/lib64
+COPY --from=builder /usr/local/cuda-12.2/lib64/*.so* /usr/local/cuda/lib64/
+COPY --from=builder /usr/local/cuda-12.2/targets/x86_64-linux/lib/*.so* /usr/local/cuda/lib64/ || true
 
-# Update library cache
-RUN ldconfig
+# Update library cache and add to LD_LIBRARY_PATH
+RUN ldconfig /usr/local/cuda/lib64
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
 
 # Create models directory with correct permissions for non-root user (1654)
 RUN mkdir -p /app/models && chown -R 1654:1654 /app
