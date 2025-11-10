@@ -12,14 +12,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcurl4-openssl-dev \
     pkg-config \
     ca-certificates \
+    cuda-nvcc-12-2 \
     && rm -rf /var/lib/apt/lists/*
+
+# Verify CUDA is available
+RUN nvcc --version
 
 # Clone and build llama.cpp
 WORKDIR /build
-RUN git clone --depth 1 https://github.com/ggerganov/llama.cpp.git && \
-    cd llama.cpp && \
-    make LLAMA_CUDA=1 LLAMA_CURL=1 -j$(nproc) && \
-    strip llama-server
+RUN git clone --depth 1 https://github.com/ggerganov/llama.cpp.git
+
+WORKDIR /build/llama.cpp
+
+# Build with CUDA support
+RUN make LLAMA_CUDA=1 LLAMA_CURL=1 -j$(nproc) llama-server
+
+# Strip binary to reduce size
+RUN strip llama-server || true
 
 # Stage 2: Runtime image
 FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04
