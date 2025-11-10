@@ -40,6 +40,13 @@ spec:
         - containerPort: 8008
           protocol: TCP
         env:
+        # Hugging Face authentication (create secret: kubectl create secret generic hf-token --from-literal=token=YOUR_TOKEN -n airia)
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: hf-token
+              key: token
+              optional: true
         # llama.cpp specific configurations
         - name: LLAMA_CONTEXT_SIZE
           value: "8192"
