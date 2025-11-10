@@ -71,10 +71,8 @@ MODEL_FILE="/app/models/qwen2-vl-72b-instruct-q4_k_m.gguf"\n\
 MMPROJ_FILE="/app/models/mmproj-qwen2-vl-72b-instruct-f16.gguf"\n\
 \n\
 # Set up Hugging Face authentication if token is provided\n\
-WGET_ARGS=""\n\
 if [ -n "$HF_TOKEN" ]; then\n\
   echo "Using Hugging Face authentication token"\n\
-  WGET_ARGS="--header=\\\"Authorization: Bearer $HF_TOKEN\\\""\n\
 fi\n\
 \n\
 # Download model if not exists (with progress and resume support)\n\
