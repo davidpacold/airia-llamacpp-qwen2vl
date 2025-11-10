@@ -9,6 +9,7 @@ ENV LLAMA_CUDA=1
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     build-essential \
+    cmake \
     libcurl4-openssl-dev \
     pkg-config \
     ca-certificates \
@@ -18,17 +19,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Verify CUDA is available
 RUN nvcc --version
 
-# Clone and build llama.cpp
+# Clone llama.cpp
 WORKDIR /build
 RUN git clone --depth 1 https://github.com/ggerganov/llama.cpp.git
 
 WORKDIR /build/llama.cpp
 
-# Build with CUDA support
-RUN make LLAMA_CUDA=1 LLAMA_CURL=1 -j$(nproc) llama-server
+# Build with CMake and CUDA support
+RUN cmake -B build \
+    -DGGML_CUDA=ON \
+    -DGGML_CURL=ON \
+    -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build build --config Release --target llama-server -j$(nproc)
 
 # Strip binary to reduce size
-RUN strip llama-server || true
+RUN strip build/bin/llama-server || true
 
 # Stage 2: Runtime image
 FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04
@@ -44,7 +49,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy only the built binary from builder
-COPY --from=builder /build/llama.cpp/llama-server /usr/local/bin/llama-server
+COPY --from=builder /build/llama.cpp/build/bin/llama-server /usr/local/bin/llama-server
 
 # Create models directory
 RUN mkdir -p /app/models
