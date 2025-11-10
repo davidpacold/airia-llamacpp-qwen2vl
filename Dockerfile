@@ -108,7 +108,7 @@ exec llama-server \\\n\
   --n-gpu-layers ${LLAMA_GPU_LAYERS:-99} \\\n\
   --parallel ${LLAMA_PARALLEL:-8} \\\n\
   --cont-batching \\\n\
-  --flash-attn \\\n\
+  --flash-attn on \\\n\
   --mlock \\\n\
   --cache-type-k f16 \\\n\
   --cache-type-v f16 \\\n\
