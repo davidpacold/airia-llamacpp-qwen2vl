@@ -67,8 +67,8 @@ WORKDIR /app
 RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
-MODEL_FILE="/app/models/qwen2-vl-7b-instruct-q4_k_m.gguf"\n\
-MMPROJ_FILE="/app/models/mmproj-qwen2-vl-7b-instruct-f16.gguf"\n\
+MODEL_FILE="/app/models/qwen2-vl-72b-instruct-q4_k_m.gguf"\n\
+MMPROJ_FILE="/app/models/mmproj-qwen2-vl-72b-instruct-f16.gguf"\n\
 \n\
 # Set up Hugging Face authentication if token is provided\n\
 WGET_ARGS=""\n\
@@ -79,26 +79,26 @@ fi\n\
 \n\
 # Download model if not exists (with progress and resume support)\n\
 if [ ! -f "$MODEL_FILE" ]; then\n\
-  echo "Downloading Qwen2-VL 7B model (~4GB)..."\n\
+  echo "Downloading Qwen2-VL 72B model (~20GB)..."\n\
   if [ -n "$HF_TOKEN" ]; then\n\
     wget -c --progress=dot:giga --header="Authorization: Bearer $HF_TOKEN" \\\n\
       -O "$MODEL_FILE" \\\n\
-      https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct-GGUF/resolve/main/qwen2-vl-7b-instruct-q4_k_m.gguf\n\
+      https://huggingface.co/Qwen/Qwen2-VL-72B-Instruct-GGUF/resolve/main/qwen2-vl-72b-instruct-q4_k_m.gguf\n\
   else\n\
     wget -c --progress=dot:giga -O "$MODEL_FILE" \\\n\
-      https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct-GGUF/resolve/main/qwen2-vl-7b-instruct-q4_k_m.gguf\n\
+      https://huggingface.co/Qwen/Qwen2-VL-72B-Instruct-GGUF/resolve/main/qwen2-vl-72b-instruct-q4_k_m.gguf\n\
   fi\n\
 fi\n\
 \n\
 if [ ! -f "$MMPROJ_FILE" ]; then\n\
-  echo "Downloading MMProj model..."\n\
+  echo "Downloading MMProj model (~2GB)..."\n\
   if [ -n "$HF_TOKEN" ]; then\n\
     wget -c --progress=dot:giga --header="Authorization: Bearer $HF_TOKEN" \\\n\
       -O "$MMPROJ_FILE" \\\n\
-      https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct-GGUF/resolve/main/mmproj-qwen2-vl-7b-instruct-f16.gguf\n\
+      https://huggingface.co/Qwen/Qwen2-VL-72B-Instruct-GGUF/resolve/main/mmproj-qwen2-vl-72b-instruct-f16.gguf\n\
   else\n\
     wget -c --progress=dot:giga -O "$MMPROJ_FILE" \\\n\
-      https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct-GGUF/resolve/main/mmproj-qwen2-vl-7b-instruct-f16.gguf\n\
+      https://huggingface.co/Qwen/Qwen2-VL-72B-Instruct-GGUF/resolve/main/mmproj-qwen2-vl-72b-instruct-f16.gguf\n\
   fi\n\
 fi\n\
 \n\
