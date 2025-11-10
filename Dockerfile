@@ -55,8 +55,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy only the built binary from builder
+# Copy the built binary and all shared libraries from builder
 COPY --from=builder /build/llama.cpp/build/bin/llama-server /usr/local/bin/llama-server
+COPY --from=builder /build/llama.cpp/build/ggml/src/libggml.so /usr/local/lib/
+COPY --from=builder /build/llama.cpp/build/ggml/src/libggml-base.so /usr/local/lib/
+COPY --from=builder /build/llama.cpp/build/ggml/src/ggml-cuda/libggml-cuda.so /usr/local/lib/
+RUN ldconfig
 
 # Create models directory with correct permissions for non-root user (1654)
 RUN mkdir -p /app/models && chown -R 1654:1654 /app
