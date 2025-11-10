@@ -1,3 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qwen2-vl-72b-llamacpp-pvc
+  namespace: airia
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: default
+  resources:
+    requests:
+      storage: 60Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,10 +41,17 @@ spec:
         operator: Equal
         value: "true"
         effect: NoSchedule
+      securityContext:
+        fsGroup: 1654
+        fsGroupChangePolicy: "OnRootMismatch"
       # Note: Replace USERNAME with your GitHub username
       # For private repos, uncomment and create ghcr-secret
       # imagePullSecrets:
       # - name: ghcr-secret
+      volumes:
+      - name: model-storage
+        persistentVolumeClaim:
+          claimName: qwen2-vl-72b-llamacpp-pvc
       containers:
       - name: qwen2-vl-llamacpp
         image: ghcr.io/davidpacold/airia-llamacpp-qwen2vl:latest
@@ -39,6 +59,9 @@ spec:
         ports:
         - containerPort: 8008
           protocol: TCP
+        volumeMounts:
+        - name: model-storage
+          mountPath: /app/models
         env:
         # Hugging Face authentication (create secret: kubectl create secret generic hf-token --from-literal=token=YOUR_TOKEN -n airia)
         - name: HF_TOKEN
