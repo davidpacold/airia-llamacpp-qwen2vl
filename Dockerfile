@@ -58,8 +58,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy only the built binary from builder
 COPY --from=builder /build/llama.cpp/build/bin/llama-server /usr/local/bin/llama-server
 
-# Create models directory
-RUN mkdir -p /app/models
+# Create models directory with correct permissions for non-root user (1654)
+RUN mkdir -p /app/models && chown -R 1654:1654 /app
 
 WORKDIR /app
 

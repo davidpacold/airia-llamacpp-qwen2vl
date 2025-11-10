@@ -34,7 +34,7 @@ spec:
       # - name: ghcr-secret
       containers:
       - name: qwen2-vl-llamacpp
-        image: ghcr.io/USERNAME/airia-llamacpp-qwen2vl:latest
+        image: ghcr.io/davidpacold/airia-llamacpp-qwen2vl:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8008
