@@ -112,8 +112,7 @@ exec llama-server \\\n\
   --mlock \\\n\
   --cache-type-k f16 \\\n\
   --cache-type-v f16 \\\n\
-  --metrics \\\n\
-  --log-format json\n\
+  --metrics\n\
 ' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Set default environment variables
