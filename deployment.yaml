@@ -72,7 +72,7 @@ spec:
               optional: true
         # llama.cpp specific configurations
         - name: LLAMA_CONTEXT_SIZE
-          value: "8192"
+          value: "16384"
         - name: LLAMA_BATCH_SIZE
           value: "2048"
         - name: LLAMA_THREADS
